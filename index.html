@@ -60,7 +60,6 @@
 
   // --- Username management ---
   let username = localStorage.getItem("coffeeHourUsername") || "";
-
   const usernameView = document.getElementById("usernameView");
   const forumView = document.getElementById("forumView");
   const saveBtn = document.getElementById("saveUsername");
@@ -88,6 +87,31 @@
     const text = document.getElementById("messageInput").value.trim();
     if (!text || !username) return;
 
+    // --- Check if user is banned ---
+    const bannedUsers = JSON.parse(localStorage.getItem("bannedUsers") || "{}");
+    const now = Date.now();
+    if (bannedUsers[username] && bannedUsers[username] > now) {
+      alert("You are banned and cannot post messages.");
+      return;
+    }
+
+    // --- Check for ban command ---
+    if (username === "The Barista" && text.startsWith("/ban ")) {
+      const parts = text.split(" "); // e.g. "/ban user123 2"
+      if (parts.length === 3) {
+        const bannedUser = parts[1];
+        const hours = parseFloat(parts[2]);
+        if (!isNaN(hours)) {
+          bannedUsers[bannedUser] = now + hours * 60 * 60 * 1000; // timestamp in ms
+          localStorage.setItem("bannedUsers", JSON.stringify(bannedUsers));
+          alert(`${bannedUser} is banned for ${hours} hour(s).`);
+          document.getElementById("messageInput").value = "";
+          return;
+        }
+      }
+    }
+
+    // --- Normal message insert ---
     await supabaseClient.from("posts").insert({
       username: username,
       message: text
@@ -114,7 +138,13 @@
 
     if (!data) return;
 
+    const bannedUsers = JSON.parse(localStorage.getItem("bannedUsers") || "{}");
+    const now = Date.now();
+
     data.forEach(row => {
+      // Skip showing banned users (optional)
+      // if (bannedUsers[row.username] && bannedUsers[row.username] > now) return;
+
       const li = document.createElement("li");
 
       // Color based on whether this is the current user

@@ -1,22 +1,108 @@
-async function loadMessages() {
-  const { data, error } = await supabaseClient
-    .from("posts")
-    .select("*")
-    .order("created_at", { ascending: true });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Coffee Hour</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      padding: 20px;
+    }
+    #box {
+      background: white;
+      max-width: 500px;
+      margin: auto;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    input, button {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+    }
+    li {
+      margin: 6px 0;
+    }
+    .username {
+      font-weight: bold;
+      color: #ff6a00;
+    }
+  </style>
+</head>
+<body>
 
-  if (error) {
-    console.error(error); // Log if Supabase fails
-    return;
+<div id="box">
+  <h1>☕ Coffee Hour</h1>
+
+  <div id="usernameView">
+    <input id="usernameInput" placeholder="Choose a username">
+    <button id="saveUsername">Save Username</button>
+  </div>
+
+  <div id="forumView" style="display:none;">
+    <input id="messageInput" placeholder="Write a message">
+    <button id="postMessage">Post</button>
+    <ul id="messages"></ul>
+  </div>
+</div>
+
+<!-- ✅ STABLE SUPABASE BUILD -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+<script>
+  const supabaseClient = supabase.createClient(
+    "https://pzmxsohkznheycizvwsk.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bXhzb2hrem5oZXljaXp2d3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzQ3OTcsImV4cCI6MjA4MzExMDc5N30.unssQUmvp8J-2GyETuWX9xh83fhebAN9IUPsTCTe7d0"
+  );
+
+  let username = "";
+
+  const usernameView = document.getElementById("usernameView");
+  const forumView = document.getElementById("forumView");
+  const saveBtn = document.getElementById("saveUsername");
+  const postBtn = document.getElementById("postMessage");
+
+  saveBtn.onclick = () => {
+    const value = document.getElementById("usernameInput").value.trim();
+    if (!value) return;
+    username = value;
+    usernameView.style.display = "none";
+    forumView.style.display = "block";
+  };
+
+  postBtn.onclick = async () => {
+    const text = document.getElementById("messageInput").value.trim();
+    if (!text || !username) return;
+
+    await supabaseClient.from("posts").insert({
+      username: username,
+      message: text
+    });
+
+    document.getElementById("messageInput").value = "";
+    loadMessages();
+  };
+
+  async function loadMessages() {
+    const { data } = await supabaseClient
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: true });
+
+    const list = document.getElementById("messages");
+    list.innerHTML = "";
+
+    data.forEach(row => {
+      const li = document.createElement("li");
+      li.innerHTML = `<span class="username">${row.username}:</span> ${row.message}`;
+      list.appendChild(li);
+    });
   }
 
-  const list = document.getElementById("messages");
-  list.innerHTML = "";
+  setInterval(loadMessages, 2000);
+  loadMessages();
+</script>
 
-  if (!data) return;
-
-  data.forEach(row => {
-    const li = document.createElement("li");
-    li.innerHTML = `<span class="username">${row.username}:</span> ${row.message}`;
-    list.appendChild(li);
-  });
-}
+</body>
+</html>

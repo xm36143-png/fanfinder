@@ -27,7 +27,6 @@
     }
     .username {
       font-weight: bold;
-      color: #ff6a00;
     }
   </style>
 </head>
@@ -59,6 +58,7 @@
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bXhzb2hrem5oZXljaXp2d3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzQ3OTcsImV4cCI6MjA4MzExMDc5N30.unssQUmvp8J-2GyETuWX9xh83fhebAN9IUPsTCTe7d0"
   );
 
+  // --- Username management ---
   let username = localStorage.getItem("coffeeHourUsername") || "";
 
   const usernameView = document.getElementById("usernameView");
@@ -72,7 +72,7 @@
     forumView.style.display = "block";
   }
 
-  // --- Save username ---
+  // Save username
   saveBtn.onclick = () => {
     const value = document.getElementById("usernameInput").value.trim();
     if (!value) return;
@@ -83,7 +83,7 @@
     forumView.style.display = "block";
   };
 
-  // --- Post a message ---
+  // Post message
   postBtn.onclick = async () => {
     const text = document.getElementById("messageInput").value.trim();
     if (!text || !username) return;
@@ -97,7 +97,7 @@
     loadMessages();
   };
 
-  // --- Load messages ---
+  // Load messages with color for current user
   async function loadMessages() {
     const { data, error } = await supabaseClient
       .from("posts")
@@ -116,16 +116,19 @@
 
     data.forEach(row => {
       const li = document.createElement("li");
-      li.innerHTML = `<span class="username">${row.username}:</span> ${row.message}`;
+
+      // Color based on whether this is the current user
+      const color = row.username === username ? "#00aaff" : "black";
+
+      li.innerHTML = `<span class="username" style="color:${color}">${row.username}:</span> ${row.message}`;
       list.appendChild(li);
     });
   }
 
-  // --- Auto-refresh every 2 seconds ---
+  // Auto-refresh every 2 seconds
   setInterval(loadMessages, 2000);
   loadMessages();
 </script>
 
 </body>
 </html>
-

@@ -7,37 +7,8 @@
 <style>
   body {
     font-family: Arial, sans-serif;
+    background: #f2f2f2;
     padding: 20px;
-    transition: background 0.3s;
-  }
-
-  body.milk { background: #ffffff; }
-  body.latte { background: #f3e5d0; }
-  body.macchiato { background: #c19a6b; }
-  body.espresso { background: #4b2e2b; color: white; }
-
-  #settings {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-  }
-
-  #settings button {
-    padding: 6px 10px;
-    cursor: pointer;
-  }
-
-  #themeMenu {
-    display: none;
-    margin-top: 5px;
-    background: white;
-    border-radius: 6px;
-    padding: 8px;
-  }
-
-  #themeMenu button {
-    width: 100%;
-    margin: 4px 0;
   }
 
   #box {
@@ -46,12 +17,6 @@
     margin: auto;
     padding: 15px;
     border-radius: 8px;
-    color: black;
-  }
-
-  body.espresso #box {
-    background: #2b1a18;
-    color: white;
   }
 
   input, button {
@@ -61,27 +26,30 @@
   }
 
   li {
-    margin: 6px 0;
+    margin: 10px 0;
+    list-style: none;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 6px;
   }
 
   .username {
     font-weight: bold;
   }
+
+  .votes {
+    margin-top: 4px;
+    font-size: 14px;
+  }
+
+  .voteBtn {
+    cursor: pointer;
+    margin-right: 10px;
+    user-select: none;
+  }
 </style>
 </head>
 
-<body class="milk">
-
-<!-- SETTINGS -->
-<div id="settings">
-  <button onclick="toggleMenu()">☰</button>
-  <div id="themeMenu">
-    <button onclick="setTheme('milk')">Milk</button>
-    <button onclick="setTheme('latte')">Latte</button>
-    <button onclick="setTheme('macchiato')">Macchiato</button>
-    <button onclick="setTheme('espresso')">Espresso</button>
-  </div>
-</div>
+<body>
 
 <div id="box">
   <h1>☕ Coffee Hour</h1>
@@ -101,21 +69,6 @@
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <script>
-  // SETTINGS MENU
-  function toggleMenu() {
-    const menu = document.getElementById("themeMenu");
-    menu.style.display = menu.style.display === "block" ? "none" : "block";
-  }
-
-  function setTheme(theme) {
-    document.body.className = theme;
-    localStorage.setItem("coffeeTheme", theme);
-  }
-
-  const savedTheme = localStorage.getItem("coffeeTheme");
-  if (savedTheme) document.body.className = savedTheme;
-
-  // SUPABASE
   const supabaseClient = supabase.createClient(
     "https://pzmxsohkznheycizvwsk.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bXhzb2hrem5oZXljaXp2d3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzQ3OTcsImV4cCI6MjA4MzExMDc5N30.unssQUmvp8J-2GyETuWX9xh83fhebAN9IUPsTCTe7d0"
@@ -163,10 +116,22 @@
       }
     }
 
-    await supabaseClient.from("posts").insert({ username, message: text });
+    await supabaseClient.from("posts").insert({
+      username,
+      message: text,
+      coffee_up: 0,
+      coffee_down: 0
+    });
+
     document.getElementById("messageInput").value = "";
     loadMessages();
   };
+
+  async function vote(id, type) {
+    const column = type === "up" ? "coffee_up" : "coffee_down";
+    await supabaseClient.rpc("increment_vote", { row_id: id, column_name: column });
+    loadMessages();
+  }
 
   async function loadMessages() {
     const { data } = await supabaseClient
@@ -185,7 +150,15 @@
 
       const li = document.createElement("li");
       const color = row.username === username ? "#00aaff" : "black";
-      li.innerHTML = `<span class="username" style="color:${color}">${row.username}:</span> ${row.message}`;
+
+      li.innerHTML = `
+        <span class="username" style="color:${color}">${row.username}:</span>
+        ${row.message}
+        <div class="votes">
+          <span class="voteBtn" onclick="vote(${row.id}, 'up')">☕ ${row.coffee_up || 0}</span>
+          <span class="voteBtn" onclick="vote(${row.id}, 'down')">💥☕ ${row.coffee_down || 0}</span>
+        </div>
+      `;
       list.appendChild(li);
     });
   }

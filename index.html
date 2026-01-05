@@ -20,6 +20,7 @@
       width: 100%;
       padding: 8px;
       margin: 5px 0;
+      box-sizing: border-box;
     }
     li {
       margin: 6px 0;
@@ -35,41 +36,54 @@
 <div id="box">
   <h1>☕ Coffee Hour</h1>
 
+  <!-- Username input -->
   <div id="usernameView">
     <input id="usernameInput" placeholder="Choose a username">
     <button id="saveUsername">Save Username</button>
   </div>
- <div id="forumView" style="display:none;">
+
+  <!-- Forum -->
+  <div id="forumView" style="display:none;">
     <input id="messageInput" placeholder="Write a message">
     <button id="postMessage">Post</button>
     <ul id="messages"></ul>
   </div>
 </div>
 
-<!-- ✅ STABLE SUPABASE BUILD -->
 <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
 <script>
+  // --- Supabase setup ---
   const supabaseClient = supabase.createClient(
     "https://pzmxsohkznheycizvwsk.supabase.co",
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bXhzb2hrem5oZXljaXp2d3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzQ3OTcsImV4cCI6MjA4MzExMDc5N30.unssQUmvp8J-2GyETuWX9xh83fhebAN9IUPsTCTe7d0"
   );
 
-  let username = "";
+  let username = localStorage.getItem("coffeeHourUsername") || "";
 
   const usernameView = document.getElementById("usernameView");
   const forumView = document.getElementById("forumView");
   const saveBtn = document.getElementById("saveUsername");
   const postBtn = document.getElementById("postMessage");
 
+  // If user already has a username, skip the input
+  if (username) {
+    usernameView.style.display = "none";
+    forumView.style.display = "block";
+  }
+
+  // --- Save username ---
   saveBtn.onclick = () => {
     const value = document.getElementById("usernameInput").value.trim();
     if (!value) return;
+
     username = value;
+    localStorage.setItem("coffeeHourUsername", username); // store locally
     usernameView.style.display = "none";
     forumView.style.display = "block";
   };
 
+  // --- Post a message ---
   postBtn.onclick = async () => {
     const text = document.getElementById("messageInput").value.trim();
     if (!text || !username) return;
@@ -83,14 +97,22 @@
     loadMessages();
   };
 
+  // --- Load messages ---
   async function loadMessages() {
-    const { data } = await supabaseClient
+    const { data, error } = await supabaseClient
       .from("posts")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false }); // newest first
+
+    if (error) {
+      console.error("Error loading messages:", error);
+      return;
+    }
 
     const list = document.getElementById("messages");
     list.innerHTML = "";
+
+    if (!data) return;
 
     data.forEach(row => {
       const li = document.createElement("li");
@@ -99,9 +121,11 @@
     });
   }
 
+  // --- Auto-refresh every 2 seconds ---
   setInterval(loadMessages, 2000);
   loadMessages();
 </script>
 
 </body>
 </html>
+

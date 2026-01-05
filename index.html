@@ -87,7 +87,7 @@
     const { data } = await supabaseClient
       .from("posts")
       .select("*")
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false });
 
     const list = document.getElementById("messages");
     list.innerHTML = "";

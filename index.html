@@ -39,8 +39,14 @@
     <input id="usernameInput" placeholder="Choose a username">
     <button id="saveUsername">Save Username</button>
   </div>
-
-  <div id="forumView" style="display:none;">
+<div>
+localStorage.setItem("coffeeHourUsername", chosenUsername)
+const savedUsername = localStorage.getItem("coffeeHourUsername");
+if (savedUsername) {
+  username = savedUsername;
+  usernameView.style.display = "none";
+  forumView.style.display = "block";  
+ <div id="forumView" style="display:none;">
     <input id="messageInput" placeholder="Write a message">
     <button id="postMessage">Post</button>
     <ul id="messages"></ul>

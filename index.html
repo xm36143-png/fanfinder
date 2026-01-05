@@ -1,13 +1,80 @@
 <!DOCTYPE html>
 <html>
+<head>
+  <title>Coffee Hour - Supabase</title>
+  <style>
+    body { font-family: Arial; background: #f2f2f2; padding: 20px; }
+    #box { background: white; padding: 15px; max-width: 500px; margin: auto; border-radius: 8px; }
+    input, button { width: 100%; padding: 8px; margin: 5px 0; }
+    li { margin: 6px 0; }
+    .username { font-weight: bold; color: #ff6a00; }
+  </style>
+</head>
 <body>
 
-<button id="btn">Click me</button>
+<div id="box">
+  <h1>Coffee Hour</h1>
 
+  <div id="userSection">
+    <input id="usernameInput" placeholder="Choose a username">
+    <button id="saveUserBtn">Save Username</button>
+  </div>
+
+  <div id="postSection" style="display:none;">
+    <input id="postText" placeholder="Write amessage">
+    <button id="postBtn">Post</button>
+    <ul id="posts"></ul>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.28.0/dist/supabase.min.js"></script>
 <script>
-  document.getElementById("btn").onclick = () => {
-    alert("JavaScript is working");
-  };
+  const supabaseUrl = 'https://pzmxsohkznheycizvwsk.supabase.co';
+  const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bXhzb2hrem5oZXljaXp2d3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzQ3OTcsImV4cCI6MjA4MzExMDc5N30.unssQUmvp8J-2GyETuWX9xh83fhebAN9IUPsTCTe7d0';
+  const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+  const userSection = document.getElementById("userSection");
+  const postSection = document.getElementById("postSection");
+  const usernameInput = document.getElementById("usernameInput");
+  const postText = document.getElementById("postText");
+  const postsList = document.getElementById("posts");
+  const saveUserBtn = document.getElementById("saveUserBtn");
+  const postBtn = document.getElementById("postBtn");
+
+  let username = localStorage.getItem("username");
+  if(username) { userSection.style.display="none"; postSection.style.display="block"; }
+
+  saveUserBtn.onclick = function() {
+    const name = usernameInput.value.trim();
+    if(!name) return;
+    localStorage.setItem("username", name);
+    username = name;
+    userSection.style.display="none";
+    postSection.style.display="block";
+  }
+
+  async function addPost() {
+    const message = postText.value.trim();
+    if(!message) return;
+    await supabase.from('posts').insert([{ username: username, message: message }]);
+    postText.value = '';
+    loadPosts();
+  }
+
+  async function loadPosts() {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: true });
+    postsList.innerHTML = '';
+    data.forEach(p => {
+      postsList.innerHTML += `<li><span class="username">${p.username}:</span> ${p.message}</li>`;
+    });
+  }
+
+  postBtn.onclick = addPost;
+  setInterval(loadPosts, 2000);
+  loadPosts();
 </script>
 
 </body>

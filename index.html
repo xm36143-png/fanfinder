@@ -77,7 +77,7 @@
     if (!value) return;
 
     username = value;
-    localStorage.setItem("coffeeHourUsername", username); // store locally
+    localStorage.setItem("coffeeHourUsername", username);
     usernameView.style.display = "none";
     forumView.style.display = "block";
   };
@@ -87,22 +87,24 @@
     const text = document.getElementById("messageInput").value.trim();
     if (!text || !username) return;
 
-    // --- Check if user is banned ---
+    // --- Load banned users ---
     const bannedUsers = JSON.parse(localStorage.getItem("bannedUsers") || "{}");
     const now = Date.now();
+
+    // Check if current user is banned
     if (bannedUsers[username] && bannedUsers[username] > now) {
-      alert("You are banned and cannot post messages.");
+      alert("You are banned and cannot post messages right now.");
       return;
     }
 
     // --- Check for ban command ---
     if (username === "The Barista" && text.startsWith("/ban ")) {
-      const parts = text.split(" "); // e.g. "/ban user123 2"
+      const parts = text.split(" ");
       if (parts.length === 3) {
         const bannedUser = parts[1];
         const hours = parseFloat(parts[2]);
         if (!isNaN(hours)) {
-          bannedUsers[bannedUser] = now + hours * 60 * 60 * 1000; // timestamp in ms
+          bannedUsers[bannedUser] = now + hours * 60 * 60 * 1000;
           localStorage.setItem("bannedUsers", JSON.stringify(bannedUsers));
           alert(`${bannedUser} is banned for ${hours} hour(s).`);
           document.getElementById("messageInput").value = "";
@@ -121,12 +123,12 @@
     loadMessages();
   };
 
-  // Load messages with color for current user
+  // Load messages with colors and hide banned users
   async function loadMessages() {
     const { data, error } = await supabaseClient
       .from("posts")
       .select("*")
-      .order("created_at", { ascending: false }); // newest first
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error loading messages:", error);
@@ -142,12 +144,10 @@
     const now = Date.now();
 
     data.forEach(row => {
-      // Skip showing banned users (optional)
-      // if (bannedUsers[row.username] && bannedUsers[row.username] > now) return;
+      // Skip banned users
+      if (bannedUsers[row.username] && bannedUsers[row.username] > now) return;
 
       const li = document.createElement("li");
-
-      // Color based on whether this is the current user
       const color = row.username === username ? "#00aaff" : "black";
 
       li.innerHTML = `<span class="username" style="color:${color}">${row.username}:</span> ${row.message}`;

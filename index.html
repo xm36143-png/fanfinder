@@ -7,8 +7,9 @@
 <style>
   body {
     font-family: Arial, sans-serif;
-    background: #f2f2f2;
+    background: #ffffff;
     padding: 20px;
+    transition: background 0.3s;
   }
 
   #box {
@@ -35,10 +36,49 @@
   .username {
     font-weight: bold;
   }
+
+  /* SETTINGS BUTTON */
+  #settingsBtn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 9999;
+    font-size: 20px;
+    background: white;
+    border-radius: 50%;
+    padding: 8px 10px;
+    cursor: pointer;
+  }
+
+  #settingsMenu {
+    position: fixed;
+    top: 55px;
+    left: 12px;
+    background: white;
+    border-radius: 8px;
+    padding: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 9999;
+  }
+
+  #settingsMenu button {
+    margin: 4px 0;
+  }
 </style>
 </head>
 
 <body>
+
+<button id="settingsBtn">⚙️</button>
+
+<div id="settingsMenu">
+  <strong>Theme</strong>
+  <button onclick="setTheme('milk')">Milk ☁️</button>
+  <button onclick="setTheme('latte')">Latte ☕</button>
+  <button onclick="setTheme('macchiato')">Macchiato 🟤</button>
+  <button onclick="setTheme('espresso')">Espresso 🌑</button>
+</div>
 
 <div id="box">
   <h1>☕ Coffee Hour</h1>
@@ -60,7 +100,7 @@
 <script>
   const supabaseClient = supabase.createClient(
     "https://pzmxsohkznheycizvwsk.supabase.co",
-    "YOUR_ANON_KEY_HERE"
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bXhzb2hrem5oZXljaXp2d3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzQ3OTcsImV4cCI6MjA4MzExMDc5N30.unssQUmvp8J-2GyETuWX9xh83fhebAN9IUPsTCTe7d0"
   );
 
   let username = localStorage.getItem("coffeeHourUsername") || "";
@@ -90,7 +130,7 @@
     const now = Date.now();
 
     if (bans[username] && bans[username] > now) {
-      alert("You are banned and cannot send messages.");
+      alert("You are banned.");
       return;
     }
 
@@ -99,7 +139,7 @@
       if (parts.length === 3) {
         bans[parts[1]] = now + parseFloat(parts[2]) * 3600000;
         localStorage.setItem("bannedUsers", JSON.stringify(bans));
-        alert(`${parts[1]} banned for ${parts[2]} hour(s).`);
+        alert(`${parts[1]} banned.`);
         document.getElementById("messageInput").value = "";
         return;
       }
@@ -122,8 +162,8 @@
 
     const bans = JSON.parse(localStorage.getItem("bannedUsers") || {});
     const now = Date.now();
-
     const list = document.getElementById("messages");
+
     list.innerHTML = "";
 
     data.forEach(row => {
@@ -137,14 +177,37 @@
           ${row.username}:
         </span> ${row.message}
       `;
-
       list.appendChild(li);
     });
   }
 
   setInterval(loadMessages, 2000);
   loadMessages();
+
+  /* SETTINGS */
+  const settingsBtn = document.getElementById("settingsBtn");
+  const settingsMenu = document.getElementById("settingsMenu");
+
+  settingsBtn.onclick = () => {
+    settingsMenu.style.display =
+      settingsMenu.style.display === "block" ? "none" : "block";
+  };
+
+  function setTheme(theme) {
+    const themes = {
+      milk: "#ffffff",
+      latte: "#f3e5d0",
+      macchiato: "#c69c6d",
+      espresso: "#3b2a1a"
+    };
+    document.body.style.background = themes[theme];
+    localStorage.setItem("coffeeTheme", theme);
+  }
+
+  const savedTheme = localStorage.getItem("coffeeTheme");
+  if (savedTheme) setTheme(savedTheme);
 </script>
 
 </body>
 </html>
+

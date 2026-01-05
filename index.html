@@ -35,17 +35,6 @@
   .username {
     font-weight: bold;
   }
-
-  .votes {
-    margin-top: 4px;
-    font-size: 14px;
-  }
-
-  .voteBtn {
-    cursor: pointer;
-    margin-right: 10px;
-    user-select: none;
-  }
 </style>
 </head>
 
@@ -71,7 +60,7 @@
 <script>
   const supabaseClient = supabase.createClient(
     "https://pzmxsohkznheycizvwsk.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB6bXhzb2hrem5oZXljaXp2d3NrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc1MzQ3OTcsImV4cCI6MjA4MzExMDc5N30.unssQUmvp8J-2GyETuWX9xh83fhebAN9IUPsTCTe7d0"
+    "YOUR_ANON_KEY_HERE"
   );
 
   let username = localStorage.getItem("coffeeHourUsername") || "";
@@ -101,7 +90,7 @@
     const now = Date.now();
 
     if (bans[username] && bans[username] > now) {
-      alert("You are banned.");
+      alert("You are banned and cannot send messages.");
       return;
     }
 
@@ -110,7 +99,7 @@
       if (parts.length === 3) {
         bans[parts[1]] = now + parseFloat(parts[2]) * 3600000;
         localStorage.setItem("bannedUsers", JSON.stringify(bans));
-        alert(`${parts[1]} banned.`);
+        alert(`${parts[1]} banned for ${parts[2]} hour(s).`);
         document.getElementById("messageInput").value = "";
         return;
       }
@@ -118,20 +107,12 @@
 
     await supabaseClient.from("posts").insert({
       username,
-      message: text,
-      coffee_up: 0,
-      coffee_down: 0
+      message: text
     });
 
     document.getElementById("messageInput").value = "";
     loadMessages();
   };
-
-  async function vote(id, type) {
-    const column = type === "up" ? "coffee_up" : "coffee_down";
-    await supabaseClient.rpc("increment_vote", { row_id: id, column_name: column });
-    loadMessages();
-  }
 
   async function loadMessages() {
     const { data } = await supabaseClient
@@ -149,16 +130,14 @@
       if (bans[row.username] && bans[row.username] > now) return;
 
       const li = document.createElement("li");
-      const color = row.username === username ? "#00aaff" : "black";
+      const color = row.username === username ? "#4aa3ff" : "black";
 
       li.innerHTML = `
-        <span class="username" style="color:${color}">${row.username}:</span>
-        ${row.message}
-        <div class="votes">
-          <span class="voteBtn" onclick="vote(${row.id}, 'up')">☕ ${row.coffee_up || 0}</span>
-          <span class="voteBtn" onclick="vote(${row.id}, 'down')">💥☕ ${row.coffee_down || 0}</span>
-        </div>
+        <span class="username" style="color:${color}">
+          ${row.username}:
+        </span> ${row.message}
       `;
+
       list.appendChild(li);
     });
   }
